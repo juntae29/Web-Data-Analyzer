@@ -7,18 +7,34 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
+# CSS: 위젯 숨김 방지 및 안내 문구 스타일 고정
 st.markdown("""
     <style>
-    .block-container { padding-top: 1rem; }
+    .fixed-guide {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        padding: 20px;
+        border-radius: 10px;
+        color: #856404;
+        margin-bottom: 20px;
+    }
     button[data-baseweb="tab"] { font-size: 20px !important; font-weight: bold !important; }
-    div[data-baseweb="textarea"] + div { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("Data Mining Analyzer")
 
-# 상단 안내 문구 (모든 모드에서 항상 표시)
-st.warning("### 💡 이용 안내\n1. 왼쪽 사이드바에서 데이터 입력 방식을 선택한다.\n2. 데이터를 업로드하거나 문장을 붙여넣는다.\n3. **'Run Analysis'** 버튼을 누르면 분석이 시작된다.")
+# HTML을 이용한 직접 렌더링 (위젯 CSS 간섭 회피)
+st.markdown("""
+<div class="fixed-guide">
+    <h3>💡 이용 안내</h3>
+    <ul>
+        <li>1. 왼쪽 사이드바에서 데이터 입력 방식을 선택한다.</li>
+        <li>2. 데이터를 업로드하거나 문장을 입력한다.</li>
+        <li>3. <b>'Run Analysis'</b> 버튼을 누르면 분석이 시작된다.</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
 set_matplotlib_font()
 
@@ -39,25 +55,16 @@ elif mode == "PDF Document":
         df = pd.DataFrame({"Content": [text]})
         col = "Content"
 elif mode == "Text Input":
-    # placeholder 추가로 빈 상자 느낌 제거
-    t = st.text_area(
-        "Paste Text", 
-        placeholder="여기에 분석할 텍스트를 붙여넣으시오.", 
-        label_visibility="collapsed"
-    )
+    t = st.text_area("분석할 문장을 입력하시오.", placeholder="분석할 문장을 이곳에 붙여넣으시오.", height=150)
     if t: 
         df = pd.DataFrame({"Content": [t]})
         col = "Content"
-    else:
-        st.info("왼쪽에서 'Text Input'을 선택했으므로, 이 상자에 텍스트를 입력해야 분석이 가능하다.")
 
 if df is not None:
     if mode != "CSV Upload":
         st.write(f"**Target Column:** '{col}'")
     
-    run_btn = st.button("Run Analysis", type="primary")
-
-    if run_btn:
+    if st.button("Run Analysis", type="primary"):
         freq, corr_df, word_df, G = run_quantitative_analysis(df, col)
         
         t1, t2, t3 = st.tabs(["Dashboard (WordCloud)", "Keyword List", "Co-occurrence Network"])
