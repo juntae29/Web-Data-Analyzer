@@ -11,45 +11,43 @@ st.set_page_config(layout="wide")
 st.title("Data Mining Analyzer")
 st.markdown("---")
 st.markdown("### 💡 User Guide")
-st.write("1. Select the input method from the left sidebar.")
-st.write("2. Upload your data or input text in the designated area below.")
-st.write("3. Click 'Run Analysis' to generate insights.")
-st.markdown("---") # 구분을 위한 수평선
+st.markdown("1. Select the input method from the left sidebar.")
+st.markdown("2. Upload your file or input text in the designated area below.")
+st.markdown("3. Click 'Run Analysis' to generate insights.")
+st.markdown("---")
 
-# 2. Input and Analysis Section
-st.subheader("Input & Analysis") # 섹션 헤더 추가
+# 2. Input and Analysis Section: Using placeholders to reserve space
 set_matplotlib_font()
 input_mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
 
+input_container = st.container()
 data_frame = None
 target_column = None
 
-# Input Logic
-if input_mode == "Text Input":
-    user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
-    if user_text: 
-        data_frame = pd.DataFrame({"Content": [user_text]})
-        target_column = "Content"
-elif input_mode == "CSV Upload":
-    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-    if uploaded_file: 
-        data_frame = pd.read_csv(uploaded_file)
-        target_column = st.selectbox("Select Column", data_frame.columns)
-elif input_mode == "PDF Document":
-    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
-    if uploaded_file:
-        reader = PdfReader(uploaded_file)
-        text_content = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-        data_frame = pd.DataFrame({"Content": [text_content]})
-        target_column = "Content"
+with input_container:
+    if input_mode == "Text Input":
+        user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
+        if user_text: 
+            data_frame = pd.DataFrame({"Content": [user_text]})
+            target_column = "Content"
+    elif input_mode == "CSV Upload":
+        uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+        if uploaded_file: 
+            data_frame = pd.read_csv(uploaded_file)
+            target_column = st.selectbox("Select Column", data_frame.columns)
+    elif input_mode == "PDF Document":
+        uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+        if uploaded_file:
+            reader = PdfReader(uploaded_file)
+            text_content = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+            data_frame = pd.DataFrame({"Content": [text_content]})
+            target_column = "Content"
 
-# Execution Logic
+# 3. Execution Logic
 if data_frame is not None:
     if input_mode != "CSV Upload":
         st.write(f"**Target Column:** '{target_column}'")
     
-    # 버튼 섹션 분리
-    st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Run Analysis", type="primary"):
         frequency, correlation_df, word_score_df, graph = run_quantitative_analysis(data_frame, target_column)
         
