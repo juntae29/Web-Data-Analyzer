@@ -33,13 +33,15 @@ if st.button("Launch Analysis"):
     df = None
     with st.spinner("Analyzing... Please wait."):
         if mode_data["type"] == "web":
+            # 데이터 수집 시도
             if run_web_scraper(mode_data["keyword"], mode_data["num"]):
+                # 파일이 실제로 생성되고 데이터가 있는지 확인
                 if os.path.exists("scraped_data.csv") and os.path.getsize("scraped_data.csv") > 0:
                     df = pd.read_csv("scraped_data.csv")
                 else:
-                    st.error("Data collected but the file is empty. Please try again.")
+                    st.error("Data collected but the file is empty. Please check your network connection.")
             else:
-                st.error("Failed to generate analysis data. Please check your input or connection.")
+                st.error("Failed to generate analysis data. arXiv may be blocking this server's IP.")
         
         elif mode_data["type"] == "pdf" and mode_data["file"] is not None:
             reader = PdfReader(mode_data["file"])
@@ -49,11 +51,7 @@ if st.button("Launch Analysis"):
         elif mode_data["type"] == "url" and mode_data["url"]:
             full_text = scrape_text_from_url(mode_data["url"])
             if full_text:
-                text = full_text
-                if mode_data["keyword"]:
-                    sentences = [s.strip() for s in full_text.split('.') if mode_data["keyword"].lower() in s.lower()]
-                    text = " ".join(sentences) if sentences else full_text
-                df = pd.DataFrame({"Abstract": [text]})
+                df = pd.DataFrame({"Abstract": [full_text]})
             else:
                 st.error("Could not extract text from the provided URL.")
         
