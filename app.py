@@ -1,30 +1,33 @@
 import streamlit as st
 import pandas as pd
+from pypdf import PdfReader
 from analyzer import run_quantitative_analysis, generate_wordcloud
+# scraper 모듈이 있다면 여기서 import, 없으면 기본 기능 유지
 
 st.set_page_config(layout="wide")
-st.title("Professional Content Analyzer (KH Coder Integrated)")
+st.title("Data Mining Analyzer (KH Coder Integrated)")
 
-uploaded_file = st.sidebar.file_uploader("Upload Data (CSV)", type=["csv"])
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    col = st.selectbox("Column to Analyze", df.columns)
-    
-    if st.button("Run Comprehensive Analysis"):
+mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
+df = None
+
+if mode == "CSV Upload":
+    f = st.file_uploader("Upload CSV", type=["csv"])
+    if f: df = pd.read_csv(f)
+elif mode == "PDF Document":
+    f = st.file_uploader("Upload PDF", type=["pdf"])
+    if f:
+        reader = PdfReader(f)
+        text = " ".join([p.extract_text() for p in reader.pages if p.extract_text()])
+        df = pd.DataFrame({"Content": [text]})
+elif mode == "Text Input":
+    t = st.text_area("Paste Text")
+    if t: df = pd.DataFrame({"Content": [t]})
+
+if df is not None:
+    col = st.selectbox("Select Column", df.columns)
+    if st.button("Run Analysis"):
         freq, corr_df, word_df = run_quantitative_analysis(df, col)
-        
-        # [Tab 1] 시각화 (워드클라우드)
-        t1, t2, t3 = st.tabs(["Dashboard (WordCloud)", "Taxonomy Mapping", "Co-occurrence Network"])
-        with t1:
-            st.image(generate_wordcloud(freq).to_array())
-        
-        # [Tab 2] 분류 분석 (매핑)
-        with t2:
-            targets = st.text_input("Target Keywords (comma separated)", "분석, 데이터")
-            target_list = [t.strip() for t in targets.split(",")]
-            st.table(word_df[word_df['Word'].isin(target_list)])
-            
-        # [Tab 3] 관계 분석 (KH Coder 스타일)
-        with t3:
-            st.write("단어 간 유사도 네트워크 행렬 (Co-occurrence)")
-            st.dataframe(corr_df.style.background_gradient(cmap='Greens'))
+        t1, t2, t3 = st.tabs(["WordCloud", "Keyword List", "Co-occurrence Network"])
+        with t1: st.image(generate_wordcloud(freq).to_array())
+        with t2: st.table(word_df.sort_values('Score', ascending=False).head(20))
+        with t3: st.dataframe(corr_df.style.background_gradient(cmap='Blues'))

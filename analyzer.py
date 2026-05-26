@@ -6,9 +6,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
-from pypdf import PdfReader
 
-# 폰트 다운로드
 def get_font():
     font_path = "/tmp/NanumGothic.ttf"
     if not os.path.exists(font_path):
@@ -19,24 +17,26 @@ def get_font():
         except: return None
     return font_path
 
-# 형태소 분석 (기존 복구)
 def tokenize(text):
     return re.findall(r'[가-힣a-zA-Z]+', str(text))
 
-# KH Coder 스타일의 정량적 분석 통합
-def process_data(df, column_name):
+def run_quantitative_analysis(df, column_name):
     data = df[column_name].dropna().astype(str)
-    if data.empty: return None, None, None
+    if data.empty: return {}, pd.DataFrame(), pd.DataFrame()
     
-    vec = TfidfVectorizer(tokenizer=tokenize, token_pattern=None, min_df=2)
+    vec = TfidfVectorizer(tokenizer=tokenize, token_pattern=None, min_df=1)
     tfidf = vec.fit_transform(data)
     words = vec.get_feature_names_out()
     
+    # 1. 빈도 분석
     freq = dict(zip(words, tfidf.sum(axis=0).A1))
+    # 2. 관계 분석 (Co-occurrence)
     sim = cosine_similarity(tfidf.T)
     corr_df = pd.DataFrame(sim, index=words, columns=words)
+    # 3. 데이터 프레임
+    word_df = pd.DataFrame({'Word': words, 'Score': tfidf.sum(axis=0).A1})
     
-    return freq, corr_df, pd.DataFrame({'Word': words, 'Score': tfidf.sum(axis=0).A1})
+    return freq, corr_df, word_df
 
 def generate_wordcloud(freq):
     wc = WordCloud(width=800, height=400, background_color='white', font_path=get_font())
