@@ -31,8 +31,9 @@ with st.sidebar:
             
     elif mode == "Web URL":
         u = st.text_input("Enter URL")
+        q = st.text_input("Search Query (Optional)")
         if st.button("Fetch"):
-            text = scrape_text_from_url(u)
+            text = scrape_text_from_url(u, q)
             if text: df = pd.DataFrame({"Abstract": [text]})
             else: st.error("Fetch failed.")
 
