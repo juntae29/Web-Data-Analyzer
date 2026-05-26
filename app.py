@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 import networkx as nx
 from pypdf import PdfReader
-from analyzer import run_quantitative_analysis, generate_wordcloud, get_font, set_matplotlib_font
+from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotlib_font
 
 st.set_page_config(layout="wide")
 
@@ -17,9 +16,8 @@ st.markdown("""
 
 st.title("Data Mining Analyzer")
 
-# Load font for Matplotlib
+# Apply font settings
 set_matplotlib_font()
-font_prop = fm.FontProperties(fname=get_font())
 
 mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
 df = None
@@ -56,7 +54,7 @@ if df is not None:
             if G and len(G.nodes) > 0:
                 fig, ax = plt.subplots(figsize=(10, 8))
                 pos = nx.spring_layout(G, k=0.5)
-                # Pass the font properties directly
-                nx.draw(G, pos, with_labels=True, node_color='skyblue', font_properties=font_prop, font_size=12, ax=ax)
+                # Removed 'font_properties' to fix ValueError
+                nx.draw(G, pos, with_labels=True, node_color='skyblue', font_size=12, ax=ax)
                 st.pyplot(fig)
             else: st.warning("Not enough data for network visualization.")
