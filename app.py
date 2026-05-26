@@ -7,62 +7,67 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
-# 1. 사이드바 구성
-mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
-
-# 2. 메인 화면 구성
-st.title("Data Mining Analyzer")
-
-# 데이터 입력 전에도 무조건 노출되는 안내 문구 (st.markdown을 최상단에 배치)
-st.markdown("---")
-st.write("### 💡 이용 안내")
-st.write("1. 왼쪽 사이드바에서 데이터 입력 방식을 선택하십시오.")
-st.write("2. 데이터를 업로드하거나, 아래 입력 상자에 분석할 문장을 입력하십시오.")
-st.write("3. 'Run Analysis' 버튼을 클릭하면 분석 결과가 나타납니다.")
-st.markdown("---")
+# Use st.empty for priority rendering of instruction guide
+guide_placeholder = st.empty()
+with guide_placeholder.container():
+    st.title("Data Mining Analyzer")
+    st.markdown("---")
+    st.markdown("### 💡 User Guide")
+    st.markdown("1. Select the input method from the left sidebar.")
+    st.markdown("2. Upload data or paste text into the input box below.")
+    st.markdown("3. Click the 'Run Analysis' button to generate results.")
+    st.markdown("---")
 
 set_matplotlib_font()
 
-df = None
-col = None
+# Sidebar configuration
+input_mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
+data_frame = None
+target_column = None
 
-# 모드별 입력창
-if mode == "CSV Upload":
-    f = st.file_uploader("Upload CSV", type=["csv"])
-    if f: 
-        df = pd.read_csv(f)
-        col = st.selectbox("Select Column", df.columns)
-elif mode == "PDF Document":
-    f = st.file_uploader("Upload PDF", type=["pdf"])
-    if f:
-        reader = PdfReader(f)
-        text = " ".join([p.extract_text() for p in reader.pages if p.extract_text()])
-        df = pd.DataFrame({"Content": [text]})
-        col = "Content"
-elif mode == "Text Input":
-    t = st.text_area("분석할 문장 입력", placeholder="여기에 분석할 문장을 붙여넣으십시오.", height=150)
-    if t: 
-        df = pd.DataFrame({"Content": [t]})
-        col = "Content"
+# Input handling by mode
+if input_mode == "CSV Upload":
+    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+    if uploaded_file: 
+        data_frame = pd.read_csv(uploaded_file)
+        target_column = st.selectbox("Select Column", data_frame.columns)
 
-# 분석 실행부
-if df is not None:
-    if mode != "CSV Upload":
-        st.write(f"**Target Column:** '{col}'")
+elif input_mode == "PDF Document":
+    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+    if uploaded_file:
+        reader = PdfReader(uploaded_file)
+        text_content = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+        data_frame = pd.DataFrame({"Content": [text_content]})
+        target_column = "Content"
+
+elif input_mode == "Text Input":
+    user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
+    if user_text: 
+        data_frame = pd.DataFrame({"Content": [user_text]})
+        target_column = "Content"
+
+# Execution logic
+if data_frame is not None:
+    if input_mode != "CSV Upload":
+        st.write(f"**Target Column:** '{target_column}'")
     
     if st.button("Run Analysis", type="primary"):
-        freq, corr_df, word_df, G = run_quantitative_analysis(df, col)
+        frequency, correlation_df, word_score_df, graph = run_quantitative_analysis(data_frame, target_column)
         
-        t1, t2, t3 = st.tabs(["Dashboard (WordCloud)", "Keyword List", "Co-occurrence Network"])
+        tab1, tab2, tab3 = st.tabs(["Dashboard (WordCloud)", "Keyword List", "Co-occurrence Network"])
         
-        with t1:
-            if freq: st.image(generate_wordcloud(freq).to_array())
-        with t2:
-            st.table(word_df.sort_values('Score', ascending=False).head(20))
-        with t3:
-            if G and len(G.nodes) > 0:
-                fig, ax = plt.subplots(figsize=(10, 8))
-                pos = nx.spring_layout(G, k=0.5)
-                nx.draw(G, pos, with_labels=True, node_color='skyblue', font_size=12, ax=ax, font_family='NanumGothic')
-                st.pyplot(fig)
-            else: st.warning("분석할 데이터가 부족하여 네트워크 시각화가 불가능하다.")
+        with tab1:
+            if frequency: 
+                st.image(generate_wordcloud(frequency).to_array())
+        
+        with tab2:
+            st.table(word_score_df.sort_values('Score', ascending=False).head(20))
+            
+        with tab3:
+            if graph and len(graph.nodes) > 0:
+                figure, axis = plt.subplots(figsize=(10, 8))
+                positions = nx.spring_layout(graph, k=0.5)
+                nx.draw(graph, positions, with_labels=True, node_color='skyblue', font_size=12, ax=axis, font_family='NanumGothic')
+                st.pyplot(figure)
+            else: 
+                st.warning("Insufficient data for network visualization.")
