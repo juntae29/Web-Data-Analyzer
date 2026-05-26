@@ -5,18 +5,14 @@ from analyzer import run_quantitative_analysis, generate_wordcloud
 
 st.set_page_config(layout="wide")
 
-# CSS: Added rule to hide the 'Press Ctrl+Enter' hint
 st.markdown("""
     <style>
     button[data-baseweb="tab"] {
         font-size: 20px !important;
         font-weight: bold !important;
     }
-    div[data-testid="stTextArea"] label {
-        display: none;
-    }
-    /* Hide the 'Press Ctrl+Enter' hint */
-    .st-emotion-cache-1jm61g7 {
+    /* Force hide the caption in text_area */
+    div[data-baseweb="textarea"] + div {
         display: none !important;
     }
     </style>
