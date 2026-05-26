@@ -4,6 +4,8 @@ import os
 import requests
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordcloud import WordCloud
@@ -18,6 +20,13 @@ def get_font():
         except: return None
     return font_path
 
+def set_matplotlib_font():
+    font_path = get_font()
+    if font_path:
+        # Clear font cache to ensure the new font is loaded
+        fm.fontManager.addfont(font_path)
+        plt.rcParams['font.family'] = 'NanumGothic'
+
 def tokenize(text):
     return re.findall(r'[가-힣a-zA-Z]+', str(text))
 
@@ -25,9 +34,7 @@ def run_quantitative_analysis(df, column_name):
     data = df[column_name].dropna().astype(str)
     if data.empty: return {}, pd.DataFrame(), pd.DataFrame(), None
     
-    # 동적 min_df 설정: 데이터가 적으면 1, 많으면 2
     min_df = 1 if len(data) < 2 else 2
-    
     vec = TfidfVectorizer(tokenizer=tokenize, token_pattern=None, min_df=min_df)
     tfidf = vec.fit_transform(data)
     words = vec.get_feature_names_out()
@@ -42,7 +49,7 @@ def run_quantitative_analysis(df, column_name):
     G = nx.Graph()
     for i in range(len(words)):
         for j in range(i + 1, len(words)):
-            if sim[i, j] > 0.1: # 임계치를 낮추어 연결 확보
+            if sim[i, j] > 0.1:
                 G.add_edge(words[i], words[j], weight=sim[i, j])
                 
     return freq, corr_df, word_df, G
