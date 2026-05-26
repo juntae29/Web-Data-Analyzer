@@ -4,5 +4,6 @@ requests
 beautifulsoup4
 wordcloud
 pypdf
+arxiv
 feedparser
 kiwipiepy
