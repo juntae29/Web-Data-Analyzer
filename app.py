@@ -7,40 +7,27 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
-# 사이드바 설정
+# 1. 사이드바: 가이드와 입력 위젯을 모두 배치 (레이아웃 간섭 원천 차단)
 with st.sidebar:
-    st.title("Settings")
+    st.title("💡 User Guide")
+    st.markdown("1. Select Input Source.\n2. Upload/Input Data.\n3. Press Run Analysis.")
+    st.markdown("---")
+    
     input_mode = st.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
-
-# 메인 화면 레이아웃 강제 고정
-# 상단 (제목 + 안내) / 하단 (입력창)을 명확히 구분
-st.title("Data Mining Analyzer")
-st.markdown("---")
-
-# 안내 문구를 제목 바로 아래 고정하기 위해 명시적 텍스트 블록 생성
-st.markdown("""
-### 💡 User Guide
-1. Select the input method from the left sidebar.
-2. The input field will appear below this guide.
-3. Click 'Run Analysis' to see the results.
-""")
-st.markdown("---")
-
-# 입력창을 위한 고정 컨테이너
-input_container = st.container()
-
-with input_container:
+    st.markdown("---")
+    
+    # 입력 위젯을 사이드바에 배치하여 메인 화면 제목을 침범하지 않게 함
     data_frame = None
     target_column = None
-
+    
     if input_mode == "Text Input":
-        user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
-        if user_text: 
+        user_text = st.text_area("Paste text here", height=150)
+        if user_text:
             data_frame = pd.DataFrame({"Content": [user_text]})
             target_column = "Content"
     elif input_mode == "CSV Upload":
         uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-        if uploaded_file: 
+        if uploaded_file:
             data_frame = pd.read_csv(uploaded_file)
             target_column = st.selectbox("Select Column", data_frame.columns)
     elif input_mode == "PDF Document":
@@ -51,20 +38,25 @@ with input_container:
             data_frame = pd.DataFrame({"Content": [text_content]})
             target_column = "Content"
 
-# 결과 영역
+# 2. 메인 화면: 오직 분석 결과만 표시
+st.title("Data Mining Analyzer")
+
 if data_frame is not None:
     if st.button("Run Analysis", type="primary"):
         set_matplotlib_font()
         frequency, correlation_df, word_score_df, graph = run_quantitative_analysis(data_frame, target_column)
         
-        tabs = st.tabs(["Dashboard", "Keyword List", "Network"])
-        with tabs[0]:
+        tab1, tab2, tab3 = st.tabs(["Dashboard", "Keyword List", "Network"])
+        with tab1:
             if frequency: st.image(generate_wordcloud(frequency).to_array())
-        with tabs[1]:
+        with tab2:
             st.table(word_score_df.sort_values('Score', ascending=False).head(20))
-        with tabs[2]:
+        with tab3:
             if graph and len(graph.nodes) > 0:
                 fig, ax = plt.subplots(figsize=(8, 6))
                 pos = nx.spring_layout(graph, k=0.5)
                 nx.draw(graph, pos, with_labels=True, node_color='skyblue', ax=ax, font_family='NanumGothic')
                 st.pyplot(fig)
+            else: st.warning("Insufficient data.")
+else:
+    st.info("Please select an input source and provide data in the sidebar to start.")
