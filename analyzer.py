@@ -11,6 +11,7 @@ def run_analysis(df, column_name):
     if df is None or column_name not in df.columns:
         return None, None
     
+    # 텍스트 데이터 추출 및 정제
     raw_data = df[column_name].dropna().astype(str).tolist()
     combined_text = " ".join(raw_data)
     
@@ -19,6 +20,7 @@ def run_analysis(df, column_name):
     
     kiwi = Kiwi()
     tokens = []
+    # 한국어 형태소 분석
     analysis_results = kiwi.analyze(combined_text)
     
     for result in analysis_results:
@@ -29,11 +31,13 @@ def run_analysis(df, column_name):
         return None, None
     
     token_counts = Counter(tokens)
+    # 통계적 관점에서 Frequency로 컬럼명 지정
     result_dataframe = pd.DataFrame(token_counts.most_common(20), columns=['Word', 'Frequency'])
     
     return result_dataframe, token_counts
 
 def generate_wordcloud(token_counts):
+    # 환경에 따라 폰트 경로 확인 필요
     wc = WordCloud(
         font_path='/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
         background_color='white',

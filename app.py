@@ -1,13 +1,22 @@
+import sys
+import os
+
+# Ensure the project root is in the system path to allow absolute imports
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt  # 이 부분이 누락되면 NameError가 발생한다
+import matplotlib.pyplot as plt
 from pypdf import PdfReader
 import openpyxl
-from analyzer import run_analysis, set_font, generate_wordcloud
+
+# Importing modules from the project structure
+from Visualizer.plots import set_font, generate_wordcloud
+from Text_Mining.tokenizer import run_analysis
 
 st.set_page_config(layout="wide")
 
-# Sidebar 설정
+# Sidebar configuration for data input
 with st.sidebar:
     st.title("User Guide")
     input_mode = st.radio("Input Source", ["CSV/Excel Upload", "PDF Document", "Text Input"])
@@ -45,7 +54,7 @@ with st.sidebar:
             st.session_state.data = pd.DataFrame({"Content": [text]})
             st.session_state.column = "Content"
 
-# 메인 화면
+# Main UI layout
 st.title("Data Mining Analyzer")
 
 if st.session_state.data is not None and st.session_state.column:
@@ -57,7 +66,6 @@ if st.session_state.data is not None and st.session_state.column:
             st.table(result_df)
             st.subheader("Frequency Visualization")
             
-            # Matplotlib 객체 생성
             fig, ax = plt.subplots()
             wc = generate_wordcloud(token_counts)
             ax.imshow(wc, interpolation='bilinear')
@@ -65,3 +73,6 @@ if st.session_state.data is not None and st.session_state.column:
             st.pyplot(fig)
         else:
             st.error("No meaningful tokens detected. Check the column selection.")
+
+# Fixed requirement
+st.text("여호와를 찬양하라!")
