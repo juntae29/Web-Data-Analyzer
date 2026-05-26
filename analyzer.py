@@ -1,59 +1,32 @@
 import pandas as pd
-import re
-import os
-import requests
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from wordcloud import WordCloud
+from konlpy.tag import Okt
+import matplotlib.pyplot as plt
 
-def get_font():
-    font_path = "/tmp/NanumGothic.ttf"
-    if not os.path.exists(font_path):
-        url = "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
-        try:
-            res = requests.get(url, timeout=10)
-            with open(font_path, "wb") as f: f.write(res.content)
-        except: return None
-    return font_path
+def set_font():
+    plt.rc('font', family='NanumGothic')
 
-def set_matplotlib_font():
-    font_path = get_font()
-    if font_path:
-        # Clear font cache to ensure the new font is loaded
-        fm.fontManager.addfont(font_path)
-        plt.rcParams['font.family'] = 'NanumGothic'
+def tokenizer(text):
+    okt = Okt()
+    return okt.nouns(text)
 
-def tokenize(text):
-    return re.findall(r'[가-힣a-zA-Z]+', str(text))
-
-def run_quantitative_analysis(df, column_name):
-    data = df[column_name].dropna().astype(str)
-    if data.empty: return {}, pd.DataFrame(), pd.DataFrame(), None
+def run_analysis(df, column_name):
+    if df is None or column_name not in df.columns:
+        return None, None, None, None
     
-    min_df = 1 if len(data) < 2 else 2
-    vec = TfidfVectorizer(tokenizer=tokenize, token_pattern=None, min_df=min_df)
-    tfidf = vec.fit_transform(data)
-    words = vec.get_feature_names_out()
+    data = df[column_name].dropna().astype(str).tolist()
     
-    if len(words) == 0: return {}, pd.DataFrame(), pd.DataFrame(), None
+    if not data or all(len(d.strip()) == 0 for d in data):
+        return None, None, None, None
     
-    freq = dict(zip(words, tfidf.sum(axis=0).A1))
-    sim = cosine_similarity(tfidf.T)
-    corr_df = pd.DataFrame(sim, index=words, columns=words)
-    word_df = pd.DataFrame({'Word': words, 'Score': tfidf.sum(axis=0).A1})
+    vectorizer = TfidfVectorizer(tokenizer=tokenizer, token_pattern=None, max_features=1000)
     
-    G = nx.Graph()
-    for i in range(len(words)):
-        for j in range(i + 1, len(words)):
-            if sim[i, j] > 0.1:
-                G.add_edge(words[i], words[j], weight=sim[i, j])
-                
-    return freq, corr_df, word_df, G
-
-def generate_wordcloud(freq):
-    wc = WordCloud(width=800, height=400, background_color='white', font_path=get_font())
-    return wc.generate_from_frequencies(freq) if freq else wc
+    try:
+        tfidf = vectorizer.fit_transform(data)
+    except ValueError:
+        return None, None, None, None
+    
+    word_freq = pd.Series(tfidf.sum(axis=0).A1, index=vectorizer.get_feature_names_out())
+    result_df = word_freq.reset_index().rename(columns={'index': 'Word', 0: 'Score'})
+    
+    return word_freq.to_dict(), None, result_df, None
