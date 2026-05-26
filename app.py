@@ -7,29 +7,29 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
-# 1. 사이드바 영역 (안내 문구 이동)
+# 1. 안내 문구는 사이드바로 완전히 이동하여 레이아웃 간섭 제거
 with st.sidebar:
     st.title("💡 User Guide")
     st.markdown("""
     1. Select input method.
-    2. Provide data in the main area.
+    2. Input/Upload data in the main section.
     3. Click 'Run Analysis' to see results.
     """)
     st.markdown("---")
     input_mode = st.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
 
-# 2. 메인 영역을 상단과 하단으로 분리
-# 상단: 제목 영역
+# 2. 메인 화면을 상단(제목)과 하단(분석 영역)으로 분리 (Colums 사용)
 st.title("Data Mining Analyzer")
 st.markdown("---")
 
-# 하단: 입력 및 분석 영역 (Placeholders 활용)
-main_area = st.container()
+# 3. 분석을 위한 메인 컨테이너 고정
+main_container = st.container()
 
-data_frame = None
-target_column = None
+with main_container:
+    data_frame = None
+    target_column = None
 
-with main_area:
+    # 입력 위젯 배치
     if input_mode == "Text Input":
         user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
         if user_text: 
@@ -48,7 +48,8 @@ with main_area:
             data_frame = pd.DataFrame({"Content": [text_content]})
             target_column = "Content"
 
-    # 3. 분석 실행
+    # 4. 분석 실행 및 결과 섹션 분리
+    st.markdown("---")
     set_matplotlib_font()
     if data_frame is not None:
         if input_mode != "CSV Upload":
@@ -57,16 +58,17 @@ with main_area:
         if st.button("Run Analysis", type="primary"):
             frequency, correlation_df, word_score_df, graph = run_quantitative_analysis(data_frame, target_column)
             
-            tab1, tab2, tab3 = st.tabs(["Dashboard (WordCloud)", "Keyword List", "Co-occurrence Network"])
+            # 결과 섹션: Tab을 사용하여 시각적 분리
+            tabs = st.tabs(["Dashboard (WordCloud)", "Keyword List", "Co-occurrence Network"])
             
-            with tab1:
+            with tabs[0]:
                 if frequency: st.image(generate_wordcloud(frequency).to_array())
-            with tab2:
+            with tabs[1]:
                 st.table(word_score_df.sort_values('Score', ascending=False).head(20))
-            with tab3:
+            with tabs[2]:
                 if graph and len(graph.nodes) > 0:
-                    figure, axis = plt.subplots(figsize=(10, 8))
-                    positions = nx.spring_layout(graph, k=0.5)
-                    nx.draw(graph, positions, with_labels=True, node_color='skyblue', font_size=12, ax=axis, font_family='NanumGothic')
-                    st.pyplot(figure)
-                else: st.warning("Insufficient data for network visualization.")
+                    fig, ax = plt.subplots(figsize=(10, 8))
+                    pos = nx.spring_layout(graph, k=0.5)
+                    nx.draw(graph, pos, with_labels=True, node_color='skyblue', font_size=12, ax=ax, font_family='NanumGothic')
+                    st.pyplot(fig)
+                else: st.warning("Insufficient data.")
