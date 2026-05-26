@@ -7,25 +7,27 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
-# Use st.empty for priority rendering of instruction guide
-guide_placeholder = st.empty()
-with guide_placeholder.container():
-    st.title("Data Mining Analyzer")
-    st.markdown("---")
-    st.markdown("### 💡 User Guide")
-    st.markdown("1. Select the input method from the left sidebar.")
-    st.markdown("2. Upload data or paste text into the input box below.")
-    st.markdown("3. Click the 'Run Analysis' button to generate results.")
-    st.markdown("---")
+# Title and persistent instruction guide
+st.title("Data Mining Analyzer")
+
+# Instruction block is placed outside of conditional logic to ensure it is always rendered
+st.markdown("---")
+st.markdown("### 💡 User Guide")
+st.markdown("1. Select the input method from the left sidebar.")
+st.markdown("2. Upload your file or input text in the designated area.")
+st.markdown("3. Click 'Run Analysis' to generate insights.")
+st.markdown("---")
 
 set_matplotlib_font()
 
-# Sidebar configuration
+# Sidebar
 input_mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
+
+# Variables to store data
 data_frame = None
 target_column = None
 
-# Input handling by mode
+# Input processing
 if input_mode == "CSV Upload":
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
     if uploaded_file: 
@@ -41,12 +43,13 @@ elif input_mode == "PDF Document":
         target_column = "Content"
 
 elif input_mode == "Text Input":
+    # Text area is always visible
     user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
     if user_text: 
         data_frame = pd.DataFrame({"Content": [user_text]})
         target_column = "Content"
 
-# Execution logic
+# Analysis execution
 if data_frame is not None:
     if input_mode != "CSV Upload":
         st.write(f"**Target Column:** '{target_column}'")
