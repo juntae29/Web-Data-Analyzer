@@ -2,5 +2,6 @@ streamlit
 pandas
 scikit-learn
 wordcloud
-pypdf
 konlpy
+jpype1
+pypdf
