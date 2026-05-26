@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import time
-import re
 import os
 from urllib.parse import quote
 
@@ -12,7 +11,7 @@ def run_web_scraper(search_query, num_papers):
     if os.path.exists("scraped_data.csv"): os.remove("scraped_data.csv")
     
     headers = {"User-Agent": "Mozilla/5.0"}
-    encoded_query = quote(search_query)
+    encoded_query = quote(search_query) # Space handling
     
     while len(extracted_records) < num_papers:
         url = f"https://arxiv.org/search/?query={encoded_query}&size=50&start={start_index}"
@@ -27,7 +26,7 @@ def run_web_scraper(search_query, num_papers):
                 summary = article.find("p", class_="abstract").text.replace("Abstract:", "").strip()
                 extracted_records.append({"title": title, "Abstract": summary})
             start_index += 50
-            time.sleep(2.0)
+            time.sleep(2.0) # Server safety delay
         except: break
     
     if not extracted_records: return False
@@ -40,6 +39,6 @@ def scrape_text_from_url(url):
         if response.status_code != 200: return None
         soup = BeautifulSoup(response.text, 'html.parser')
         for e in soup(["script", "style", "nav", "footer", "header"]): e.extract()
-        text = re.sub(r'\s+', ' ', soup.get_text(separator=' ')).strip()
+        text = soup.get_text(separator=' ').strip()
         return text if len(text) > 50 else None
     except: return None
