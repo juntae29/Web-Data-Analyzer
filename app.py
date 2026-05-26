@@ -1,32 +1,44 @@
 import streamlit as st
 import pandas as pd
 import os
-from scraper import run_web_scraper
+from scraper import run_web_scraper, scrape_text_from_url
 from analyzer import process_dataframe_mining, generate_wordcloud_obj
+from pypdf import PdfReader
 
-st.set_page_config(page_title="arXiv Data Analyzer", layout="wide")
-st.title("🌐 arXiv Data Mining Analyzer")
+st.set_page_config(page_title="Multi-Source Analyzer", layout="wide")
+st.title("🌐 Multi-Source Text Data Mining Analyzer")
 
 with st.sidebar:
-    st.header("Configuration")
-    keyword = st.text_input("Research Keyword", "Artificial Intelligence")
-    num = st.slider("Number of Papers", 10, 50, 20)
+    mode = st.selectbox("Select Analysis Mode", ["arXiv Web Scraping", "PDF Document Analysis", "Custom Text Input", "Web URL Analysis"])
+    
+    if mode == "arXiv Web Scraping":
+        keyword = st.text_input("Research Keyword", "Artificial Intelligence")
+        num = st.slider("Number of Papers", 10, 50, 20)
+    elif mode == "Web URL Analysis":
+        url = st.text_input("Website URL")
+    elif mode == "PDF Document Analysis":
+        pdf_file = st.file_uploader("Upload PDF", type=["pdf"])
+    else:
+        custom_text = st.text_area("Paste text here", height=200)
 
 if st.button("Launch Analysis"):
-    with st.spinner("Fetching data from arXiv API..."):
+    df = None
+    if mode == "arXiv Web Scraping":
         if run_web_scraper(keyword, num):
             df = pd.read_csv("scraped_data.csv")
-            st.success(f"Successfully loaded {len(df)} papers.")
-            
-            # 분석 및 시각화
-            word_df, words = process_dataframe_mining(df)
-            wc = generate_wordcloud_obj(words)
-            
-            tab1, tab2 = st.tabs(["Visualization", "Raw Data"])
-            with tab1:
-                st.image(wc.to_array(), use_column_width=True)
-                st.bar_chart(word_df.set_index("Word"))
-            with tab2:
-                st.dataframe(df)
         else:
-            st.error("Failed to fetch data from arXiv API. Please try again.")
+            st.error("Failed to fetch data from arXiv API. Check logs for details.")
+    elif mode == "PDF Document Analysis" and pdf_file:
+        reader = PdfReader(pdf_file)
+        text = "".join([page.extract_text() for page in reader.pages])
+        df = pd.DataFrame({"Abstract": [text]})
+    elif mode == "Web URL Analysis" and url:
+        text = scrape_text_from_url(url)
+        if text: df = pd.DataFrame({"Abstract": [text]})
+    elif mode == "Custom Text Input" and custom_text:
+        df = pd.DataFrame({"Abstract": [custom_text]})
+
+    if df is not None and not df.empty:
+        word_df, words = process_dataframe_mining(df)
+        st.image(generate_wordcloud_obj(words).to_array())
+        st.dataframe(df)
