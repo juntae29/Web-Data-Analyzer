@@ -21,7 +21,8 @@ with st.sidebar:
         if uploaded:
             st.session_state.data = pd.read_csv(uploaded)
             st.session_state.column = st.selectbox("Select Column", st.session_state.data.columns)
-            st.write("Preview:", st.session_state.data[st.session_state.column].head())
+            st.write("Preview of selected column:")
+            st.write(st.session_state.data[st.session_state.column].astype(str).head(3))
             
     elif input_mode == "PDF Document":
         uploaded = st.file_uploader("Upload PDF", type=["pdf"])
@@ -38,7 +39,7 @@ with st.sidebar:
             st.session_state.column = "Content"
 
     st.markdown("---")
-    st.text("Prais the Lord!")
+    st.text("여호와를 찬양하라!")
 
 st.title("Data Mining Analyzer")
 
@@ -50,6 +51,6 @@ if st.session_state.data is not None and st.session_state.column:
         if result_df is not None and not result_df.empty:
             st.table(result_df.sort_values('Score', ascending=False).head(20))
         else:
-            st.error("The selected column does not contain valid text for analysis (e.g., dates or numbers). Please select a text-based column.")
+            st.error("No valid text data found in the selected column.")
 else:
     st.info("Please provide input in the sidebar.")
