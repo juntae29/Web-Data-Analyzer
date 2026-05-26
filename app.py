@@ -14,14 +14,24 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Ensure title and guide are clearly separated
 st.title("Data Mining Analyzer")
+
+# Enhanced Instruction Box
+with st.expander("📌 Click here for usage instructions", expanded=True):
+    st.markdown("""
+    **Follow these steps to analyze your data:**
+    1. **Select Input:** Choose your data source (CSV, PDF, or Text) from the left sidebar.
+    2. **Upload/Paste:** Provide the file or text content.
+    3. **Run:** Click the **'Run Analysis'** button to generate insights.
+    """)
+
 set_matplotlib_font()
 
 mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
 df = None
 col = None
 
-# 입력 소스에 따른 데이터 로드
 if mode == "CSV Upload":
     f = st.file_uploader("Upload CSV", type=["csv"])
     if f: 
@@ -40,12 +50,10 @@ elif mode == "Text Input":
         df = pd.DataFrame({"Content": [t]})
         col = "Content"
 
-# 데이터가 준비되면 즉시 버튼 표시
 if df is not None:
     if mode != "CSV Upload":
-        st.info(f"Analysis will be performed on the '{col}' column.")
+        st.write(f"**Target Column:** '{col}'")
     
-    # 버튼을 입력 영역 바로 아래로 이동
     run_btn = st.button("Run Analysis", type="primary")
 
     if run_btn:
