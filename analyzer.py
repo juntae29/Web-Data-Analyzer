@@ -8,28 +8,26 @@ def set_font():
 
 def run_analysis(df, column_name):
     if df is None or column_name not in df.columns:
-        return None, None, None, None
+        return None
     
-    # Ensure data is string and join with space
-    data = df[column_name].dropna().astype(str).tolist()
-    text = " ".join(data)
+    raw_data = df[column_name].dropna().astype(str).tolist()
+    combined_text = " ".join(raw_data)
     
-    if not text or len(text.strip()) == 0:
-        return None, None, None, None
+    if not combined_text.strip():
+        return None
     
     kiwi = Kiwi()
-    # Broaden analysis to include all nouns and adjectives found
-    results = kiwi.analyze(text)
     tokens = []
-    for result in results:
+    analysis_results = kiwi.analyze(combined_text)
+    
+    for result in analysis_results:
         for token in result[0]:
-            if token.tag in ['NNG', 'NNP', 'VA', 'VV']:
-                tokens.append(token.form)
-    
+            tokens.append(token.form)
+            
     if not tokens:
-        return None, None, None, None
+        return None
     
-    counts = Counter(tokens)
-    result_df = pd.DataFrame(counts.most_common(20), columns=['Word', 'Score'])
+    token_counts = Counter(tokens)
+    result_dataframe = pd.DataFrame(token_counts.most_common(20), columns=['Word', 'Score'])
     
-    return counts, None, result_df, None
+    return result_dataframe

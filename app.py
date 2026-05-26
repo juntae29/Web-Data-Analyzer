@@ -12,52 +12,47 @@ with st.sidebar:
     
     input_mode = st.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
     
-    if "df" not in st.session_state:
-        st.session_state.df = None
+    if "data_frame" not in st.session_state:
+        st.session_state.data_frame = None
     
     if input_mode == "CSV Upload":
-        uploaded = st.file_uploader("Upload CSV", type=["csv"])
-        if uploaded:
+        uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+        if uploaded_file:
             try:
-                st.session_state.df = pd.read_csv(uploaded, encoding='utf-8')
+                st.session_state.data_frame = pd.read_csv(uploaded_file, encoding='utf-8')
             except:
-                st.session_state.df = pd.read_csv(uploaded, encoding='cp949')
+                st.session_state.data_frame = pd.read_csv(uploaded_file, encoding='cp949')
             
-            # 필터링 로직: 텍스트(object) 타입인 열만 추출
-            text_cols = st.session_state.df.select_dtypes(include=['object']).columns.tolist()
-            if text_cols:
-                st.session_state.selected_col = st.selectbox("Select Text Column", text_cols)
-                st.write("Preview:", st.session_state.df[st.session_state.selected_col].astype(str).head(3))
-            else:
-                st.error("No text-based column found in this CSV.")
+            st.session_state.target_column = st.selectbox("Select Column", st.session_state.data_frame.columns)
             
     elif input_mode == "PDF Document":
-        uploaded = st.file_uploader("Upload PDF", type=["pdf"])
-        if uploaded:
-            reader = PdfReader(uploaded)
-            text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
-            st.session_state.df = pd.DataFrame({"Content": [text]})
-            st.session_state.selected_col = "Content"
+        uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+        if uploaded_file:
+            reader = PdfReader(uploaded_file)
+            full_text = " ".join([page.extract_text() for page in reader.pages if page.extract_text()])
+            st.session_state.data_frame = pd.DataFrame({"Content": [full_text]})
+            st.session_state.target_column = "Content"
             
     elif input_mode == "Text Input":
-        text = st.text_area("Input text", height=150)
-        if text:
-            st.session_state.df = pd.DataFrame({"Content": [text]})
-            st.session_state.selected_col = "Content"
+        user_input = st.text_area("Input text", height=150)
+        if user_input:
+            st.session_state.data_frame = pd.DataFrame({"Content": [user_input]})
+            st.session_state.target_column = "Content"
 
     st.markdown("---")
     st.text("여호와를 찬양하라!")
 
 st.title("Data Mining Analyzer")
 
-if st.session_state.df is not None and "selected_col" in st.session_state:
+if st.session_state.data_frame is not None and "target_column" in st.session_state:
     if st.button("Run Analysis", type="primary"):
         set_font()
-        _, _, result_df, _ = run_analysis(st.session_state.df, st.session_state.selected_col)
+        result_table = run_analysis(st.session_state.data_frame, st.session_state.target_column)
         
-        if result_df is not None and not result_df.empty:
-            st.table(result_df)
+        if result_table is not None:
+            st.table(result_table)
         else:
-            st.error("Analysis failed. No valid Korean words detected in the selected column.")
+            st.error("Analysis failed. Please check the input data.")
+            st.write("Data sample:", st.session_state.data_frame[st.session_state.target_column].head())
 else:
     st.info("Please provide input in the sidebar.")
