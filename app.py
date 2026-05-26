@@ -18,15 +18,18 @@ with st.sidebar:
     if input_mode == "CSV Upload":
         uploaded = st.file_uploader("Upload CSV", type=["csv"])
         if uploaded:
-            # Handle encoding issues
             try:
                 st.session_state.df = pd.read_csv(uploaded, encoding='utf-8')
             except:
                 st.session_state.df = pd.read_csv(uploaded, encoding='cp949')
             
+            # 필터링 로직: 텍스트(object) 타입인 열만 추출
             text_cols = st.session_state.df.select_dtypes(include=['object']).columns.tolist()
             if text_cols:
                 st.session_state.selected_col = st.selectbox("Select Text Column", text_cols)
+                st.write("Preview:", st.session_state.df[st.session_state.selected_col].astype(str).head(3))
+            else:
+                st.error("No text-based column found in this CSV.")
             
     elif input_mode == "PDF Document":
         uploaded = st.file_uploader("Upload PDF", type=["pdf"])
@@ -55,6 +58,6 @@ if st.session_state.df is not None and "selected_col" in st.session_state:
         if result_df is not None and not result_df.empty:
             st.table(result_df)
         else:
-            st.error("No valid tokens found. Please check if the data contains Korean text.")
+            st.error("Analysis failed. No valid Korean words detected in the selected column.")
 else:
     st.info("Please provide input in the sidebar.")
