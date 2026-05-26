@@ -7,27 +7,23 @@ from analyzer import run_quantitative_analysis, generate_wordcloud, set_matplotl
 
 st.set_page_config(layout="wide")
 
-# Sidebar instruction section: This ensures the guide is always visible regardless of main content
-st.sidebar.title("💡 Instructions")
-st.sidebar.markdown("""
-1. Select your input method (CSV, PDF, or Text).
-2. Upload file or input text in the main area.
-3. Click 'Run Analysis' to see the results.
-""")
-st.sidebar.markdown("---")
-
-# Main content
+# 1. Main Title
 st.title("Data Mining Analyzer")
 
-set_matplotlib_font()
-
+# 2. Sidebar Input Selection
 input_mode = st.sidebar.radio("Input Source", ["CSV Upload", "PDF Document", "Text Input"])
 
 data_frame = None
 target_column = None
 
-# Input processing
-if input_mode == "CSV Upload":
+# 3. Input Area (Text Input is placed high up)
+if input_mode == "Text Input":
+    user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
+    if user_text: 
+        data_frame = pd.DataFrame({"Content": [user_text]})
+        target_column = "Content"
+
+elif input_mode == "CSV Upload":
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
     if uploaded_file: 
         data_frame = pd.read_csv(uploaded_file)
@@ -41,13 +37,17 @@ elif input_mode == "PDF Document":
         data_frame = pd.DataFrame({"Content": [text_content]})
         target_column = "Content"
 
-elif input_mode == "Text Input":
-    user_text = st.text_area("Input text for analysis", placeholder="Paste your text here.", height=150)
-    if user_text: 
-        data_frame = pd.DataFrame({"Content": [user_text]})
-        target_column = "Content"
+# 4. User Guide (Placed below input area)
+st.markdown("---")
+st.markdown("### 💡 User Guide")
+st.markdown("1. Select the input method from the left sidebar.")
+st.markdown("2. Upload your file or input text in the designated area.")
+st.markdown("3. Click 'Run Analysis' to generate insights.")
+st.markdown("---")
 
-# Execution Logic
+# 5. Analysis Execution
+set_matplotlib_font()
+
 if data_frame is not None:
     if input_mode != "CSV Upload":
         st.write(f"**Target Column:** '{target_column}'")
