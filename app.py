@@ -5,11 +5,19 @@ from analyzer import run_quantitative_analysis, generate_wordcloud
 
 st.set_page_config(layout="wide")
 
+# CSS: Added rule to hide the 'Press Ctrl+Enter' hint
 st.markdown("""
     <style>
     button[data-baseweb="tab"] {
         font-size: 20px !important;
         font-weight: bold !important;
+    }
+    div[data-testid="stTextArea"] label {
+        display: none;
+    }
+    /* Hide the 'Press Ctrl+Enter' hint */
+    .st-emotion-cache-1jm61g7 {
+        display: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -29,11 +37,10 @@ elif mode == "PDF Document":
         text = " ".join([p.extract_text() for p in reader.pages if p.extract_text()])
         df = pd.DataFrame({"Content": [text]})
 elif mode == "Text Input":
-    t = st.text_area("Paste Text")
+    t = st.text_area("Paste Text", label_visibility="collapsed")
     if t: df = pd.DataFrame({"Content": [t]})
 
 if df is not None:
-    # PDF나 텍스트 모드일 때는 자동으로 Content를 선택하고 안내함
     if mode == "CSV Upload":
         col = st.selectbox("Select Column", df.columns)
     else:
