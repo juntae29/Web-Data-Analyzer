@@ -1,16 +1,14 @@
 import streamlit as st
 import pandas as pd
-import os
 from scraper import run_web_scraper, scrape_text_from_url
 from analyzer import process_dataframe_mining, generate_wordcloud_obj
 from pypdf import PdfReader
 
-st.set_page_config(page_title="Multi-Source Analyzer", layout="wide")
+st.set_page_config(layout="wide")
 st.title("🌐 Multi-Source Text Data Mining Analyzer")
 
 with st.sidebar:
     mode = st.selectbox("Select Analysis Mode", ["arXiv Web Scraping", "PDF Document Analysis", "Custom Text Input", "Web URL Analysis"])
-    
     if mode == "arXiv Web Scraping":
         keyword = st.text_input("Research Keyword", "Artificial Intelligence")
         num = st.slider("Number of Papers", 10, 50, 20)
@@ -27,11 +25,10 @@ if st.button("Launch Analysis"):
         if run_web_scraper(keyword, num):
             df = pd.read_csv("scraped_data.csv")
         else:
-            st.error("Failed to fetch data from arXiv API. Check logs for details.")
+            st.error("Failed to connect to arXiv via RSS. Server might be blocked.")
     elif mode == "PDF Document Analysis" and pdf_file:
         reader = PdfReader(pdf_file)
-        text = "".join([page.extract_text() for page in reader.pages])
-        df = pd.DataFrame({"Abstract": [text]})
+        df = pd.DataFrame({"Abstract": ["".join([p.extract_text() for p in reader.pages])]})
     elif mode == "Web URL Analysis" and url:
         text = scrape_text_from_url(url)
         if text: df = pd.DataFrame({"Abstract": [text]})
