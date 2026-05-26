@@ -4,5 +4,4 @@ beautifulsoup4
 requests
 wordcloud
 kiwipiepy
-matplotlib
-nltk
+pypdf
