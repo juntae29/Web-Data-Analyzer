@@ -1,18 +1,11 @@
-import sys
-import os
-import sys; sys.path.append('.')
-# Ensure the project root is in the system path to resolve absolute imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from pypdf import PdfReader
 import openpyxl
 
-# Importing modules from the verified project structure
-from Visualizer.plots import set_font, generate_wordcloud
-from analyzer import run_analysis
+# Import functions from the original analyzer.py
+from analyzer import run_analysis, set_font, generate_wordcloud
 
 st.set_page_config(layout="wide")
 
